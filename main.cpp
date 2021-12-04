@@ -45,6 +45,41 @@ void huffmanDict (map<int, string> &encodingDictionary, const vector<int> &symbo
     }
 }
 
+string huffmanEncode(const vector<int> &inputString, const map<int, string> &dictionary) {
+    string result = "";
+    for (int i = 0; i < inputString.size(); ++i) {
+        result += dictionary.at(inputString[i]);
+    }
+    return result;
+}
+
+void huffmanDecode(vector<int> &result, string inputCode, const map<int, string> &dictionary) {
+    result.resize(0);
+    map<string, int> codeToValueMap;
+    
+    for (auto it = dictionary.begin(); it != dictionary.end(); it++)
+    {
+        int value = it->first;
+        string code = it->second;
+        codeToValueMap[code]=value;
+    }
+
+    while(inputCode.length() > 0) {
+        int checkingLength = 1;
+        while(true) {
+            string currentCheckString = inputCode.substr(0, checkingLength);
+            auto it = codeToValueMap.find(currentCheckString);
+            if(it != codeToValueMap.end()) {
+                result.push_back(it->second);
+                inputCode = inputCode.substr(checkingLength, inputCode.length()-checkingLength);
+                break;
+            } else {
+                checkingLength ++;
+            }
+        }
+    }
+}
+
 int main(void) {
     vector<int> symbols = {1,2,3,4,5,6};
     vector<float> probabilities = {0.1, 0.4, 0.06, 0.1, 0.04, 0.3};
@@ -57,7 +92,16 @@ int main(void) {
     for(auto it = huffmanEncodingDictionary.cbegin(); it != huffmanEncodingDictionary.cend(); ++it) {
         cout << it->first << "\t" << it->second << "\n";
     }
-
+    vector<int> inputString = {2,5,1};
+    string huffmanEncodedString = huffmanEncode(inputString, huffmanEncodingDictionary);
+    cout << "Input string: ";
+    for (int i = 0; i < inputString.size(); ++i) cout << inputString[i];
+    cout << ", Encoded string: " << huffmanEncodedString;
+    vector<int> decodedHuffmanCode;
+    huffmanDecode(decodedHuffmanCode, huffmanEncodedString, huffmanEncodingDictionary);
+    cout << ", Decoded string: ";
+    for (int i = 0; i < inputString.size(); ++i) cout << decodedHuffmanCode[i];
+    cout << "\n";
 
     return 0;
 }
