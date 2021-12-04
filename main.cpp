@@ -104,7 +104,7 @@ void huffmanTrial() {
     cout << "\n";
 }
 
-string arithmeticEncode(const vector<int> &inputString, const vector<int> &symbols, const vector<float> &probabilities){
+void arithmeticEncode(string &resultString, int &encodeLength, const vector<int> &inputString, const vector<int> &symbols, const vector<float> &probabilities){
     map<int, float> preCumulativeProbabilities;
     map<int, float> postCumulativeProbabilities;
     float probSum = 0;
@@ -121,7 +121,7 @@ string arithmeticEncode(const vector<int> &inputString, const vector<int> &symbo
         encodedLowerBound += preCumulativeProbabilities[inputString[i]] * encodeRange;
     }
 
-    string result = "";
+    resultString = "";
     float resultLowerBound = 0;
     float resultUpperBound = 1;
     while(1) {
@@ -130,25 +130,64 @@ string arithmeticEncode(const vector<int> &inputString, const vector<int> &symbo
             break;
         } else if (resultMidPoint < encodedLowerBound) {
             resultLowerBound = resultMidPoint;
-            result += "1";
+            resultString += "1";
         } else if (resultMidPoint > encodedUpperBound) {
             resultUpperBound = resultMidPoint;
-            result += "0";
+            resultString += "0";
         } else if (encodedLowerBound < resultMidPoint && resultMidPoint < encodedUpperBound) {
             float lowerBoundDiff = resultMidPoint - encodedLowerBound;
             float upperBoundDiff = encodedUpperBound - resultMidPoint;
             if (lowerBoundDiff > upperBoundDiff) {
                 resultUpperBound = resultMidPoint;
-                result += "0";
+                resultString += "0";
             } else {
                 resultLowerBound = resultMidPoint;
-                result += "1";
+                resultString += "1";
             }
         } else {
             cout << "error at arithmetic encoding\n";
         }
     }
-    return result;
+    encodeLength = inputString.size();
+}
+
+void arithmeticDecode(vector<int> &result, string inputCode, const vector<int> &symbols, const vector<float> &probabilities, int encodeLength) {
+    float encodeLowerBound = 0;
+    float encodeUpperBound = 1;
+    for(int i = 0; i < inputCode.length(); ++i) {
+        float encodeRange = encodeUpperBound - encodeLowerBound;
+        if (inputCode[i] == '1') {
+            encodeLowerBound += encodeRange / 2;
+        } else {
+            encodeUpperBound -= encodeRange / 2;
+        }
+    }
+    
+    map<int, float> preCumulativeProbabilities;
+    map<int, float> postCumulativeProbabilities;
+    float probSum = 0;
+    for(int i = 0; i < probabilities.size(); ++i) {
+        preCumulativeProbabilities[symbols[i]]= probSum;
+        probSum += probabilities[i];
+        postCumulativeProbabilities[symbols[i]]=probSum;
+    }
+
+    result.resize(0);
+    float scannerLowerBound = 0;
+    float scannerUpperBound = 1;
+    for(int i = 0; i < encodeLength; ++i) {
+        float scannerRange = scannerUpperBound - scannerLowerBound;
+        for (int i = 0; i < symbols.size(); ++i) {
+            float lowerBound = scannerLowerBound + scannerRange * preCumulativeProbabilities[symbols[i]];
+            float upperBound = scannerLowerBound + scannerRange * postCumulativeProbabilities[symbols[i]];
+            if (lowerBound <= encodeLowerBound && upperBound >= encodeUpperBound) {
+                result.push_back(symbols[i]);
+                scannerLowerBound = lowerBound;
+                scannerUpperBound = upperBound;
+                break;
+            }
+        }
+    }
 }
 
 void arithmeticTrial() {
@@ -156,15 +195,17 @@ void arithmeticTrial() {
     vector<float> probabilities = {0.5, 0.33, 0.17};
 
     vector<int> inputString = {2,3,1};
-    string arithmeticEncodedString = arithmeticEncode(inputString, symbols, probabilities);
+    string arithmeticEncodedString;
+    int arithmeticInputLength = 0;
+    arithmeticEncode(arithmeticEncodedString, arithmeticInputLength, inputString, symbols, probabilities);
     cout << "Input string: ";
     for (int i = 0; i < inputString.size(); ++i) cout << inputString[i];
     cout << ", Encoded string: " << arithmeticEncodedString;
-    // vector<int> decodedHuffmanCode;
-    // huffmanDecode(decodedHuffmanCode, huffmanEncodedString, huffmanEncodingDictionary);
-    // cout << ", Decoded string: ";
-    // for (int i = 0; i < inputString.size(); ++i) cout << decodedHuffmanCode[i];
-    // cout << "\n";
+    vector<int> decodedArithmeticCode;
+    arithmeticDecode(decodedArithmeticCode, arithmeticEncodedString, symbols, probabilities, arithmeticInputLength);
+    cout << ", Decoded string: ";
+    for (int i = 0; i < inputString.size(); ++i) cout << decodedArithmeticCode[i];
+    cout << "\n";
 }
 
 int main(void) {
